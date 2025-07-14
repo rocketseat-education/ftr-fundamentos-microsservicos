@@ -1,0 +1,56 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+  - name: url-shortener
+    url: http://host.docker.internal:3000
+    routes:
+      - name: url-shortener-routes
+        paths:
+          - /api/urls
+          - /api/urls/
+          - /api/urls/.*
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+        strip_path: false
+
+  - name: analytics
+    url: http://host.docker.internal:3001
+    routes:
+      - name: analytics-routes
+        paths:
+          - /api/analytics
+          - /api/analytics/
+          - /api/analytics/.*
+        methods:
+          - GET
+          - POST
+        strip_path: false
+
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600

@@ -1,0 +1,32 @@
+{
+  "name": "analytics",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types --env-file=.env src/server.ts",
+    "start": "node --experimental-strip-types src/server.ts",
+    "test": "node --test --experimental-strip-types --env-file=.env.test src/**/*.test.ts",
+    "lint": "biome lint --write",
+    "format": "biome format --write",
+    "check": "biome check --write",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "fastify": "^5.1.0",
+    "fastify-type-provider-zod": "^4.0.2",
+    "zod": "^3.24.1",
+    "drizzle-orm": "^0.36.4",
+    "postgres": "^3.4.5",
+    "kafkajs": "^2.2.4",
+    "@paralleldrive/cuid2": "^2.2.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.1.1",
+    "ultracite": "^1.0.0",
+    "@types/node": "^22.10.2",
+    "drizzle-kit": "^0.31.2",
+    "typescript": "^5.7.2"
+  }
+}

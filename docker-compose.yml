@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # PostgreSQL for URL Shortener
+  url-shortener-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=url_shortener
+    volumes:
+      - url_shortener_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  # PostgreSQL for Analytics
+  analytics-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=analytics
+    volumes:
+      - analytics_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
+  # Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+    networks:
+      - microservices-network
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - microservices-network
+
+  # Kong Gateway with Native Kong Manager
+  kong:
+    image: kong:3.4
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/kong/declarative/kong.yml
+      - KONG_PROXY_ACCESS_LOG=/dev/stdout
+      - KONG_ADMIN_ACCESS_LOG=/dev/stdout
+      - KONG_PROXY_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_ERROR_LOG=/dev/stderr
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_ADMIN_GUI_LISTEN=0.0.0.0:8002
+      - KONG_ADMIN_GUI_URL=http://localhost:8002
+    volumes:
+      - ./kong:/kong/declarative
+    network_mode: host
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  url_shortener_data:
+  analytics_data:
+
+networks:
+  microservices-network:
+    driver: bridge
