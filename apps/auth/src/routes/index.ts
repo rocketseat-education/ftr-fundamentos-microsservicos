@@ -1,11 +1,21 @@
 import type { FastifyInstance } from 'fastify'
-import { healthRoutes } from './health.ts'
-import { jwksRoutes } from './jwks.ts'
-import { authRoutes } from './auth.ts'
+import { healthCheck } from './health-check.ts'
+import { getJwks } from './get-jwks.ts'
+import { getJwtKey } from './get-jwt-key.ts'
+import { registerUser } from './register-user.ts'
+import { loginUser } from './login-user.ts'
+import { refreshToken } from './refresh-token.ts'
+import { logoutUser } from './logout-user.ts'
+import { getUserProfile } from './get-user-profile.ts'
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Register all route modules
-  await fastify.register(healthRoutes)
-  await fastify.register(jwksRoutes)
-  await fastify.register(authRoutes)
+  await fastify.register(healthCheck)
+  await fastify.register(getJwks)
+  await fastify.register(getJwtKey)
+  await fastify.register(registerUser)
+  await fastify.register(loginUser)
+  await fastify.register(refreshToken)
+  await fastify.register(logoutUser)
+  await fastify.register(getUserProfile)
 }

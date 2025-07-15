@@ -1,10 +1,13 @@
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
 import { z } from 'zod'
+import { eq, sql } from 'drizzle-orm'
 import {
   BadRequestError,
   NotFoundError,
   ValidationError,
 } from '../lib/error-handler.ts'
+import { db } from '../db/connection.ts'
+import { clicks, urlStats, processedEvents, urlCreations } from '../db/schema.ts'
 
 export const analyticsRoutes: FastifyPluginAsyncZod = async (fastify) => {
   // Record click event
@@ -207,47 +210,75 @@ export const analyticsRoutes: FastifyPluginAsyncZod = async (fastify) => {
         }
       }
 
-      // TODO: Implement overview analytics logic
-      // For now, return mock data
-      const mockOverview = {
-        totalUrls: 5,
-        totalClicks: 125,
-        totalUniqueClicks: 89,
-        topUrls: [
-          {
-            shortCode: 'abc123',
-            originalUrl: 'https://example.com',
-            clicks: 45,
-            uniqueClicks: 32,
-            createdAt: new Date().toISOString(),
-          },
-          {
-            shortCode: 'def456',
-            originalUrl: 'https://google.com',
-            clicks: 38,
-            uniqueClicks: 28,
-            createdAt: new Date().toISOString(),
-          },
-        ],
-        recentClicks: [
-          {
-            shortCode: 'abc123',
-            country: 'United States',
-            city: 'New York',
-            referer: 'google.com',
-            clickedAt: new Date().toISOString(),
-          },
-          {
-            shortCode: 'def456',
-            country: 'Canada',
-            city: 'Toronto',
-            referer: 'twitter.com',
-            clickedAt: new Date().toISOString(),
-          },
-        ],
-      }
+      try {
+        // Get total URL creations
+        const [totalUrlsResult] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(urlCreations)
+        const totalUrls = totalUrlsResult?.count || 0
 
-      return reply.status(200).send(mockOverview)
+        // Get total clicks
+        const [totalClicksResult] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(clicks)
+        const totalClicks = totalClicksResult?.count || 0
+
+        // Get total unique clicks (simplified - just count distinct IP addresses)
+        const [uniqueClicksResult] = await db
+          .select({ count: sql<number>`count(distinct ${clicks.ipAddress})` })
+          .from(clicks)
+        const totalUniqueClicks = uniqueClicksResult?.count || 0
+
+        // Get top URLs by click count
+        const topUrls = await db
+          .select({
+            shortCode: urlStats.shortCode,
+            originalUrl: urlCreations.originalUrl,
+            clicks: urlStats.totalClicks,
+            uniqueClicks: urlStats.uniqueClicks,
+            createdAt: urlCreations.createdAt,
+          })
+          .from(urlStats)
+          .leftJoin(urlCreations, eq(urlStats.shortCode, urlCreations.shortCode))
+          .orderBy(sql`${urlStats.totalClicks} DESC`)
+          .limit(limit)
+
+        // Get recent clicks
+        const recentClicks = await db
+          .select({
+            shortCode: clicks.shortCode,
+            country: clicks.country,
+            city: clicks.city,
+            referer: clicks.referer,
+            clickedAt: clicks.clickedAt,
+          })
+          .from(clicks)
+          .orderBy(sql`${clicks.clickedAt} DESC`)
+          .limit(limit)
+
+        return reply.status(200).send({
+          totalUrls,
+          totalClicks,
+          totalUniqueClicks,
+          topUrls: topUrls.map(url => ({
+            shortCode: url.shortCode,
+            originalUrl: url.originalUrl || '',
+            clicks: url.clicks || 0,
+            uniqueClicks: url.uniqueClicks || 0,
+            createdAt: url.createdAt?.toISOString() || '',
+          })),
+          recentClicks: recentClicks.map(click => ({
+            shortCode: click.shortCode,
+            country: click.country || undefined,
+            city: click.city || undefined,
+            referer: click.referer || undefined,
+            clickedAt: click.clickedAt.toISOString(),
+          })),
+        })
+      } catch (error) {
+        console.error('Error fetching analytics overview:', error)
+        throw new ValidationError('Failed to fetch analytics overview')
+      }
     }
   )
 
@@ -366,6 +397,138 @@ export const analyticsRoutes: FastifyPluginAsyncZod = async (fastify) => {
         .header('Content-Type', 'application/json')
         .header('Content-Disposition', 'attachment; filename="analytics.json"')
         .send(jsonData)
+    }
+  )
+
+  // Get URL creation events (to demonstrate idempotency)
+  fastify.get(
+    '/api/analytics/url-creations',
+    {
+      schema: {
+        querystring: z.object({
+          limit: z.coerce.number().default(10),
+          offset: z.coerce.number().default(0),
+        }),
+        response: {
+          200: z.object({
+            urlCreations: z.array(
+              z.object({
+                id: z.string(),
+                eventId: z.string(),
+                urlId: z.string(),
+                shortCode: z.string(),
+                originalUrl: z.string(),
+                userId: z.string().optional(),
+                createdAt: z.string(),
+                metadata: z.record(z.any()).optional(),
+              })
+            ),
+            total: z.number(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { limit, offset } = request.query
+
+      try {
+        // Get total count
+        const [totalResult] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(urlCreations)
+
+        const total = totalResult?.count || 0
+
+        // Get paginated URL creations
+        const creations = await db
+          .select()
+          .from(urlCreations)
+          .orderBy(sql`${urlCreations.createdAt} DESC`)
+          .limit(limit)
+          .offset(offset)
+
+        return reply.status(200).send({
+          urlCreations: creations.map(creation => ({
+            id: creation.id,
+            eventId: creation.eventId,
+            urlId: creation.urlId,
+            shortCode: creation.shortCode,
+            originalUrl: creation.originalUrl,
+            userId: creation.userId || undefined,
+            createdAt: creation.createdAt.toISOString(),
+            metadata: creation.metadata as Record<string, any> | undefined,
+          })),
+          total,
+        })
+      } catch (error) {
+        console.error('Error fetching URL creations:', error)
+        throw new ValidationError('Failed to fetch URL creations')
+      }
+    }
+  )
+
+  // Get processed events (to demonstrate idempotency tracking)
+  fastify.get(
+    '/api/analytics/processed-events',
+    {
+      schema: {
+        querystring: z.object({
+          limit: z.coerce.number().default(10),
+          offset: z.coerce.number().default(0),
+          eventType: z.string().optional(),
+        }),
+        response: {
+          200: z.object({
+            processedEvents: z.array(
+              z.object({
+                eventId: z.string(),
+                eventType: z.string(),
+                processedAt: z.string(),
+                ttlExpiresAt: z.string().optional(),
+              })
+            ),
+            total: z.number(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { limit, offset, eventType } = request.query
+
+      try {
+        // Build query with optional event type filter
+        const baseQuery = db.select().from(processedEvents)
+        const query = eventType 
+          ? baseQuery.where(eq(processedEvents.eventType, eventType))
+          : baseQuery
+
+        // Get total count
+        const countQuery = eventType
+          ? db.select({ count: sql<number>`count(*)` }).from(processedEvents).where(eq(processedEvents.eventType, eventType))
+          : db.select({ count: sql<number>`count(*)` }).from(processedEvents)
+
+        const [totalResult] = await countQuery
+        const total = totalResult?.count || 0
+
+        // Get paginated processed events
+        const events = await query
+          .orderBy(sql`${processedEvents.processedAt} DESC`)
+          .limit(limit)
+          .offset(offset)
+
+        return reply.status(200).send({
+          processedEvents: events.map(event => ({
+            eventId: event.eventId,
+            eventType: event.eventType,
+            processedAt: event.processedAt.toISOString(),
+            ttlExpiresAt: event.ttlExpiresAt?.toISOString(),
+          })),
+          total,
+        })
+      } catch (error) {
+        console.error('Error fetching processed events:', error)
+        throw new ValidationError('Failed to fetch processed events')
+      }
     }
   )
 }

@@ -34,11 +34,27 @@ This project implements a URL shortener application using a microservices archit
 
 ```
 ├── apps/
-│   ├── url-shortener/
+│   ├── auth/                          # Authentication service
 │   │   ├── src/
 │   │   │   ├── db/
-│   │   │   │   ├── schema.ts          # Database schema definitions
+│   │   │   │   ├── schema.ts          # User and refresh token schemas
 │   │   │   │   └── connection.ts      # Database connection setup
+│   │   │   ├── lib/
+│   │   │   │   ├── jwt.ts             # JWT token utilities
+│   │   │   │   ├── password.ts        # Argon2id password hashing
+│   │   │   │   └── error-handler.ts   # Error handling utilities
+│   │   │   ├── routes/
+│   │   │   │   ├── index.ts           # Route registration
+│   │   │   │   ├── register-user.ts   # User registration route
+│   │   │   │   ├── login-user.ts      # User login route
+│   │   │   │   ├── refresh-token.ts   # Token refresh route
+│   │   │   │   ├── logout-user.ts     # User logout route
+│   │   │   │   ├── get-user-profile.ts # Get user profile route
+│   │   │   │   ├── get-jwks.ts        # JWKS endpoint route
+│   │   │   │   ├── get-jwt-key.ts     # JWT key endpoint route
+│   │   │   │   └── health-check.ts    # Health check route
+│   │   │   ├── services/
+│   │   │   │   └── auth.ts            # Authentication business logic
 │   │   │   ├── env.ts                 # Environment variables validation
 │   │   │   ├── tracing.ts             # OpenTelemetry configuration
 │   │   │   └── server.ts              # Main server entry point
@@ -46,14 +62,58 @@ This project implements a URL shortener application using a microservices archit
 │   │   ├── tsconfig.json
 │   │   ├── biome.json
 │   │   ├── drizzle.config.ts
-│   │   ├── Dockerfile
-│   │   ├── .gitignore
 │   │   └── .env.example
-│   └── analytics/
+│   ├── url-shortener/                 # URL shortener service
+│   │   ├── src/
+│   │   │   ├── db/
+│   │   │   │   ├── schema.ts          # URLs table schema
+│   │   │   │   └── connection.ts      # Database connection setup
+│   │   │   ├── lib/
+│   │   │   │   ├── kafka/             # Kafka event publishing
+│   │   │   │   │   ├── config.ts      # Kafka configuration
+│   │   │   │   │   ├── producer.ts    # Kafka producer
+│   │   │   │   │   └── events/        # Event definitions
+│   │   │   │   │       └── produced.ts # URL creation and click events
+│   │   │   │   └── error-handler.ts   # Error handling utilities
+│   │   │   ├── routes/
+│   │   │   │   ├── index.ts           # Route registration
+│   │   │   │   ├── create-url.ts      # Create URL route
+│   │   │   │   ├── get-url.ts         # Get URL by short code route
+│   │   │   │   ├── list-urls.ts       # List URLs route
+│   │   │   │   ├── update-url.ts      # Update URL route
+│   │   │   │   ├── delete-url.ts      # Delete URL route
+│   │   │   │   ├── redirect-url.ts    # Redirect URL route
+│   │   │   │   └── health-check.ts    # Health check route
+│   │   │   ├── env.ts                 # Environment variables validation
+│   │   │   ├── tracing.ts             # OpenTelemetry configuration
+│   │   │   └── server.ts              # Main server entry point
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   ├── biome.json
+│   │   ├── drizzle.config.ts
+│   │   └── .env.example
+│   └── analytics/                     # Analytics service
 │       ├── src/
 │       │   ├── db/
-│       │   │   ├── schema.ts          # Analytics database schema
+│       │   │   ├── schema.ts          # Analytics and idempotency schemas
 │       │   │   └── connection.ts      # Database connection setup
+│       │   ├── lib/
+│       │   │   ├── kafka/             # Kafka event consumption
+│       │   │   │   ├── config.ts      # Kafka configuration
+│       │   │   │   ├── consumer.ts    # Kafka consumer
+│       │   │   │   └── events/        # Event definitions
+│       │   │   │       └── consumed.ts # Click and URL creation handlers
+│       │   │   └── error-handler.ts   # Error handling utilities
+│       │   ├── routes/
+│       │   │   ├── index.ts                # Route registration
+│       │   │   ├── record-click.ts         # Record click event route
+│       │   │   ├── get-url-analytics.ts    # Get URL analytics route
+│       │   │   ├── get-analytics-overview.ts # Get analytics overview route
+│       │   │   ├── get-realtime-analytics.ts # Get realtime analytics route
+│       │   │   ├── export-analytics.ts     # Export analytics route
+│       │   │   ├── get-url-creations.ts    # Get URL creations route
+│       │   │   ├── get-processed-events.ts # Get processed events route
+│       │   │   └── health-check.ts         # Health check route
 │       │   ├── env.ts                 # Environment variables validation
 │       │   ├── tracing.ts             # OpenTelemetry configuration
 │       │   └── server.ts              # Main server entry point
@@ -61,12 +121,33 @@ This project implements a URL shortener application using a microservices archit
 │       ├── tsconfig.json
 │       ├── biome.json
 │       ├── drizzle.config.ts
-│       ├── Dockerfile
-│       ├── .gitignore
 │       └── .env.example
+├── shared/                            # Shared utilities package
+│   ├── core/
+│   │   ├── tracing.ts                 # OpenTelemetry initialization
+│   │   └── logger.ts                  # Logging utilities
+│   ├── kafka/
+│   │   └── events/
+│   │       └── types.ts               # Event type definitions
+│   ├── routes/
+│   │   └── health.ts                  # Shared health check route
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── index.ts                       # Main exports
+├── contracts/                         # Event contracts package
+│   ├── events/
+│   │   ├── url-shortener/
+│   │   │   ├── click-event.ts         # Click event schema
+│   │   │   └── url-created-event.ts   # URL creation event schema
+│   │   └── analytics/
+│   │       └── index.ts               # Analytics event exports
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── index.ts                       # Main exports
 ├── kong/
-│   └── kong.yml                   # Kong gateway configuration
-├── docker-compose.yml
+│   └── kong.yml                       # Kong gateway configuration
+├── docker-compose.yml                 # Infrastructure services
+├── client.http                        # HTTP client for testing
 └── CLAUDE.md
 ```
 
@@ -122,6 +203,25 @@ export const urlStats = pgTable('url_stats', {
   shortCode: text('short_code').notNull().unique(),
   totalClicks: integer('total_clicks').default(0),
   uniqueClicks: integer('unique_clicks').default(0),
+});
+
+// Idempotency tables
+export const processedEvents = pgTable('processed_events', {
+  eventId: text('event_id').primaryKey(),
+  eventType: text('event_type').notNull(),
+  processedAt: timestamp('processed_at').defaultNow().notNull(),
+  ttlExpiresAt: timestamp('ttl_expires_at'),
+});
+
+export const urlCreations = pgTable('url_creations', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  eventId: text('event_id').notNull().unique(),
+  urlId: text('url_id').notNull(),
+  shortCode: text('short_code').notNull(),
+  originalUrl: text('original_url').notNull(),
+  userId: text('user_id'),
+  createdAt: timestamp('created_at').notNull(),
+  metadata: jsonb('metadata'),
 });
 ```
 
@@ -381,6 +481,120 @@ curl -X POST http://localhost:8000/auth/refresh \
 6. **Get JWT Token**: Use POST /auth/login endpoint
 7. **Test Protected Routes**: Use JWT token in Authorization header
 
+## Event-Driven Architecture with Idempotency
+
+### Overview
+The project implements a robust event-driven architecture using Kafka for inter-service communication. A key feature is the idempotent processing of URL creation events, demonstrating exactly-once processing in distributed systems.
+
+### Idempotency Implementation
+
+#### **URL Creation Event Flow**
+1. **URL Shortener Service** creates a URL and publishes `url-shortener.url-created` event
+2. **Analytics Service** consumes the event and processes it idempotently
+3. **Duplicate Detection** ensures each event is processed exactly once
+
+#### **Key Components**
+
+**Event Contract** (`contracts/events/url-shortener/url-created-event.ts`):
+```typescript
+export const UrlCreatedEventPayload = z.object({
+  eventId: z.string().describe('Unique event identifier for idempotency'),
+  urlId: z.string().describe('The created URL unique identifier'),
+  shortCode: z.string().describe('Generated short code'),
+  originalUrl: z.string().url().describe('Target URL'),
+  userId: z.string().optional().describe('User who created the URL'),
+  createdAt: z.string().datetime().describe('URL creation timestamp'),
+  metadata: z.record(z.any()).optional().describe('Additional context'),
+})
+```
+
+**Analytics Database Schema for Idempotency**:
+```typescript
+// Table for tracking processed events to ensure idempotency
+export const processedEvents = pgTable('processed_events', {
+  eventId: text('event_id').primaryKey(),
+  eventType: text('event_type').notNull(),
+  processedAt: timestamp('processed_at').defaultNow().notNull(),
+  ttlExpiresAt: timestamp('ttl_expires_at'),
+})
+
+// Table for tracking URL creation analytics
+export const urlCreations = pgTable('url_creations', {
+  id: text('id').primaryKey().$defaultFn(() => createId()),
+  eventId: text('event_id').notNull().unique(),
+  urlId: text('url_id').notNull(),
+  shortCode: text('short_code').notNull(),
+  originalUrl: text('original_url').notNull(),
+  userId: text('user_id'),
+  createdAt: timestamp('created_at').notNull(),
+  metadata: jsonb('metadata'),
+})
+```
+
+**Idempotent Event Handler** (`apps/analytics/src/lib/kafka/events/consumed.ts`):
+```typescript
+const urlCreatedHandler: EventHandler<UrlCreatedEventPayload> = async (payload) => {
+  try {
+    // Start a transaction for idempotent processing
+    await db.transaction(async (tx) => {
+      // Check if this event has already been processed
+      const existingEvent = await tx
+        .select()
+        .from(processedEvents)
+        .where(sql`${processedEvents.eventId} = ${payload.eventId}`)
+        .limit(1)
+
+      if (existingEvent.length > 0) {
+        console.log(`Event ${payload.eventId} already processed, skipping`)
+        return // Event already processed, skip
+      }
+
+      // Record that we're processing this event
+      await tx.insert(processedEvents).values({
+        eventId: payload.eventId,
+        eventType: 'url-shortener.url-created',
+        processedAt: new Date(),
+        ttlExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days TTL
+      })
+
+      // Insert URL creation record
+      await tx.insert(urlCreations).values({
+        id: createId(),
+        eventId: payload.eventId,
+        urlId: payload.urlId,
+        shortCode: payload.shortCode,
+        originalUrl: payload.originalUrl,
+        userId: payload.userId,
+        createdAt: new Date(payload.createdAt),
+        metadata: payload.metadata,
+      })
+    })
+  } catch (error) {
+    console.error('Error processing URL creation event:', error)
+    throw error // Re-throw to allow Kafka to handle retry logic
+  }
+}
+```
+
+#### **Idempotency Features**
+- **Unique Event IDs**: Each URL creation event includes a unique `eventId` using CUID2
+- **Database Transactions**: All processing happens within database transactions for atomicity
+- **Duplicate Detection**: Events are checked against the `processed_events` table before processing
+- **Graceful Handling**: Duplicate events are logged and skipped without errors
+- **TTL Support**: Optional cleanup mechanism for old processed events (30 days)
+- **Race Condition Safety**: Database constraints prevent concurrent processing of the same event
+
+#### **API Endpoints for Idempotency Monitoring**
+- `GET /api/analytics/url-creations` - View processed URL creation events
+- `GET /api/analytics/processed-events` - Monitor event processing with optional filtering
+- `GET /api/analytics/overview` - Real-time analytics dashboard
+
+### Testing Idempotency
+1. **Create URLs**: Use `POST /api/urls` to create URLs and trigger events
+2. **Monitor Processing**: Check `GET /api/analytics/processed-events` to see event processing
+3. **Verify Deduplication**: Replay events to confirm they're not processed twice
+4. **View Analytics**: Use `GET /api/analytics/url-creations` to see the results
+
 ## Environment Variables
 
 Environment variables are validated using Zod schemas. Authentication is handled via JWT tokens with centralized validation at the Kong Gateway level.
@@ -431,10 +645,102 @@ Both services include the following scripts that leverage Node.js built-in featu
   "format": "biome format --write",
   "check": "biome check --write",
   "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
   "db:push": "drizzle-kit push",
   "db:studio": "drizzle-kit studio"
 }
 ```
+
+## Route Architecture
+
+The project implements a modular route architecture where each route is separated into its own file, following the single responsibility principle. This approach improves maintainability, testability, and code organization.
+
+### Route File Naming Convention
+
+Route files are named to clearly indicate the specific action they perform:
+
+**Auth Service Routes:**
+- `register-user.ts` - Handles user registration (POST /auth/register)
+- `login-user.ts` - Handles user login (POST /auth/login)
+- `refresh-token.ts` - Handles token refresh (POST /auth/refresh)
+- `logout-user.ts` - Handles user logout (POST /auth/logout)
+- `get-user-profile.ts` - Retrieves user profile (GET /auth/profile)
+- `get-jwks.ts` - Provides JWKS endpoint (GET /.well-known/jwks.json)
+- `get-jwt-key.ts` - Provides JWT key for Kong (GET /jwt/key)
+- `health-check.ts` - Health check endpoint (GET /health)
+
+**URL Shortener Service Routes:**
+- `create-url.ts` - Creates new short URLs (POST /api/urls)
+- `get-url.ts` - Retrieves URL by short code (GET /api/urls/:shortCode)
+- `list-urls.ts` - Lists user's URLs with pagination (GET /api/urls)
+- `update-url.ts` - Updates existing URL (PUT /api/urls/:id)
+- `delete-url.ts` - Deletes URL (DELETE /api/urls/:id)
+- `redirect-url.ts` - Handles URL redirection (GET /:shortCode)
+- `health-check.ts` - Health check endpoint (GET /health)
+
+**Analytics Service Routes:**
+- `record-click.ts` - Records click events (POST /api/analytics/clicks)
+- `get-url-analytics.ts` - Retrieves analytics for specific URL (GET /api/analytics/urls/:shortCode)
+- `get-analytics-overview.ts` - Provides analytics overview (GET /api/analytics/overview)
+- `get-realtime-analytics.ts` - Real-time analytics data (GET /api/analytics/realtime)
+- `export-analytics.ts` - Exports analytics data (GET /api/analytics/export)
+- `get-url-creations.ts` - Lists URL creation events (GET /api/analytics/url-creations)
+- `get-processed-events.ts` - Lists processed events for idempotency tracking (GET /api/analytics/processed-events)
+- `health-check.ts` - Health check endpoint (GET /health)
+
+### Route Structure
+
+Each route file follows a consistent structure:
+
+```typescript
+import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod'
+import { z } from 'zod'
+// Additional imports...
+
+export const routeName: FastifyPluginAsyncZod = async (fastify) => {
+  fastify.method(
+    '/endpoint/path',
+    {
+      schema: {
+        // Zod validation schemas
+        body: z.object({...}),
+        params: z.object({...}),
+        querystring: z.object({...}),
+        headers: z.object({...}),
+        response: {
+          statusCode: z.object({...})
+        }
+      }
+    },
+    async (request, reply) => {
+      // Route handler logic
+    }
+  )
+}
+```
+
+### Route Registration
+
+All routes are registered in each service's `routes/index.ts` file:
+
+```typescript
+import type { FastifyInstance } from 'fastify'
+import { routeName } from './route-file.ts'
+
+export async function registerRoutes(fastify: FastifyInstance) {
+  await fastify.register(routeName)
+  // Additional route registrations...
+}
+```
+
+### Benefits of This Architecture
+
+1. **Single Responsibility**: Each file handles one specific route/action
+2. **Maintainability**: Easy to locate and modify specific functionality
+3. **Testability**: Individual routes can be tested in isolation
+4. **Scalability**: Easy to add new routes without affecting existing ones
+5. **Code Organization**: Clear separation of concerns
+6. **Developer Experience**: Intuitive file naming makes navigation easier
 
 ## Development Setup
 
@@ -470,18 +776,28 @@ The project uses a monorepo structure with services organized in the `apps/` dir
    docker-compose up -d
    ```
 
-5. **Run database migrations**
+5. **Generate and run database migrations**
    ```bash
-   cd apps/url-shortener && npm run db:push
-   cd ../analytics && npm run db:push
+   # Generate migrations
+   cd apps/auth && npm run db:generate
+   cd ../url-shortener && npm run db:generate
+   cd ../analytics && npm run db:generate
+   
+   # Apply migrations
+   cd apps/auth && npm run db:migrate
+   cd ../url-shortener && npm run db:migrate
+   cd ../analytics && npm run db:migrate
    ```
 
 6. **Start microservices locally**
    ```bash
-   # Terminal 1 - URL Shortener
+   # Terminal 1 - Authentication Service
+   cd apps/auth && npm run dev
+   
+   # Terminal 2 - URL Shortener
    cd apps/url-shortener && npm run dev
    
-   # Terminal 2 - Analytics
+   # Terminal 3 - Analytics
    cd apps/analytics && npm run dev
    ```
 
@@ -669,10 +985,10 @@ docker-compose restart <service>  # Restart specific service
 # Start infrastructure
 docker-compose up -d
 
-# Run migrations
-cd apps/auth && npm run db:push
-cd ../url-shortener && npm run db:push
-cd ../analytics && npm run db:push
+# Generate and run migrations
+cd apps/auth && npm run db:generate && npm run db:migrate
+cd ../url-shortener && npm run db:generate && npm run db:migrate
+cd ../analytics && npm run db:generate && npm run db:migrate
 
 # Start services locally (in separate terminals)
 cd apps/auth && npm run dev
@@ -681,3 +997,49 @@ cd apps/analytics && npm run dev
 ```
 
 This setup provides a solid foundation for a microservices-based URL shortener application with modern Node.js practices, comprehensive tooling, and enterprise-grade security through JWKS authentication, asynchronous communication, and proper service isolation.
+
+## Code Quality and Best Practices
+
+### Inline Object Creation
+The codebase follows modern JavaScript/TypeScript practices by creating objects inline rather than creating intermediate variables:
+
+**Before:**
+```typescript
+const response = { id: url.id, name: url.name }
+return reply.send(response)
+```
+
+**After:**
+```typescript
+return reply.send({ 
+  id: url.id, 
+  name: url.name 
+})
+```
+
+### Database Operations
+All services implement real database operations instead of mock data:
+
+- **URL Shortener**: Full CRUD operations with PostgreSQL using Drizzle ORM
+- **Analytics**: Real-time analytics with aggregated data from actual database queries
+- **Authentication**: Secure user management with Argon2id password hashing
+- **Click Tracking**: Atomic operations for incrementing click counts
+
+### Type Safety
+- **Zod Validation**: All API endpoints include Zod schema validation
+- **TypeScript Strict Mode**: All packages compiled with strict TypeScript settings
+- **Database Types**: Full type safety from database to API responses using Drizzle ORM
+- **Event Contracts**: Strongly typed event schemas shared across services
+
+### Performance Optimizations
+- **Inline Object Creation**: Reduces memory allocation by avoiding intermediate variables
+- **Database Transactions**: Atomic operations for data consistency and performance
+- **Pagination**: All list endpoints support limit/offset pagination
+- **Connection Pooling**: Efficient database connection management
+- **Async Event Publishing**: Non-blocking event publishing to maintain response times
+
+### Error Handling
+- **Custom Error Classes**: Structured error handling with appropriate HTTP status codes
+- **Database Error Recovery**: Proper error handling for database operations
+- **Event Processing Errors**: Graceful error handling in Kafka consumers with retry logic
+- **Validation Errors**: Clear error messages for API validation failures
