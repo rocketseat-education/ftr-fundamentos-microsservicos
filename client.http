@@ -1,0 +1,415 @@
+# URL Shortener Microservices - REST Client Test File
+# This file contains HTTP requests to test all microservices endpoints
+# Use the REST Client VSCode extension to send these requests
+# 
+# Variables for easy configuration
+@baseUrl = http://localhost:8000
+@authToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ1cmwtc2hvcnRlbmVyLWF1dGgiLCJhdWQiOiJ1cmwtc2hvcnRlbmVyIiwiZXhwIjoxNzM5NDg2NDAwLCJ1c2VySWQiOiJ0ZXN0LXVzZXItMTIzIiwibmFtZSI6IkpvaG4gRG9lIiwiZW1haWwiOiJqb2huQGV4YW1wbGUuY29tIn0.YourActualJWTSignatureHere
+@userId = test-user-123
+@email = john@example.com
+@password = securePassword123
+
+### ============================================
+### 1. AUTHENTICATION & TOKEN MANAGEMENT
+### ============================================
+
+### Get JWKS (JSON Web Key Set) - Public keys for JWT verification
+GET {{baseUrl}}/.well-known/jwks.json
+Accept: application/json
+
+### User Registration
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### User Login (Get JWT Token)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+Authorization: {{authToken}}
+
+{
+  "refreshToken": "your-refresh-token-here"
+}
+
+### Get User Profile
+GET {{baseUrl}}/auth/profile
+Authorization: {{authToken}}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+Authorization: {{authToken}}
+
+### Forgot Password
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+### Reset Password
+POST {{baseUrl}}/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email",
+  "newPassword": "newSecurePassword123"
+}
+
+### ============================================
+### 2. HEALTH CHECKS
+### ============================================
+
+### Auth Service Health Check
+GET {{baseUrl}}/auth/health
+
+### URL Shortener Health Check
+GET {{baseUrl}}/health
+
+### Analytics Health Check  
+GET {{baseUrl}}/api/analytics/health
+Accept: application/json
+
+### ============================================
+### 3. URL SHORTENER ENDPOINTS
+### ============================================
+
+### Create Short URL (Basic)
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "https://www.google.com"
+}
+
+### Create Short URL with Custom Code
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "https://github.com/microsoft/vscode",
+  "customCode": "vscode"
+}
+
+### Create Short URL (Long URL for testing)
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstleyVEVO"
+}
+
+### Get URL Details by Short Code
+GET {{baseUrl}}/api/urls/vscode
+Authorization: {{authToken}}
+
+### Get User's URLs (with pagination)
+GET {{baseUrl}}/api/urls?limit=5&offset=0
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Update URL
+PUT {{baseUrl}}/api/urls/temp-id
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "https://www.bing.com"
+}
+
+### Delete URL
+DELETE {{baseUrl}}/api/urls/temp-id
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### ============================================
+### 4. URL REDIRECTION (KAFKA TRIGGER)
+### ============================================
+### This is the MOST IMPORTANT endpoint for testing Kafka communication!
+### When accessed, it triggers a click event that gets published to Kafka
+### and consumed by the Analytics service
+
+### Test URL Redirect (Triggers Kafka Event!)
+GET {{baseUrl}}/vscode
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
+CF-IPCountry: US
+CF-IPCity: San Francisco
+Referer: https://google.com
+x-user-id: {{userId}}
+
+### Test URL Redirect with different user agent (Triggers Kafka Event!)
+GET {{baseUrl}}/temp-code
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+CF-IPCountry: BR
+CF-IPCity: São Paulo
+Referer: https://twitter.com
+x-user-id: another-user-456
+
+### Test Non-existent URL (Should return 404)
+GET {{baseUrl}}/not-found
+User-Agent: REST Client Test
+x-user-id: {{userId}}
+
+### ============================================
+### 5. ANALYTICS ENDPOINTS
+### ============================================
+
+### Manual Click Recording (Alternative to redirect)
+POST {{baseUrl}}/api/analytics/clicks
+Content-Type: application/json
+Authorization: {{authToken}}
+
+{
+  "shortCode": "vscode",
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+  "ipAddress": "192.168.1.100",
+  "country": "US",
+  "city": "New York",
+  "referer": "https://google.com",
+  "metadata": {
+    "campaign": "test-campaign",
+    "source": "manual-api-test"
+  }
+}
+
+### Get Analytics for Specific URL
+GET {{baseUrl}}/api/analytics/urls/vscode?startDate=2024-01-01&endDate=2024-12-31&groupBy=day
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Get Analytics Overview Dashboard
+GET {{baseUrl}}/api/analytics/overview?startDate=2024-07-01&endDate=2024-07-31&limit=10
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Get Real-time Analytics
+GET {{baseUrl}}/api/analytics/realtime
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Export Analytics Data (CSV)
+GET {{baseUrl}}/api/analytics/export?format=csv&startDate=2024-07-01&endDate=2024-07-31
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Export Analytics Data (JSON)
+GET {{baseUrl}}/api/analytics/export?format=json&shortCode=vscode
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### ============================================
+### 6. ERROR TESTING
+### ============================================
+
+### Test Invalid URL Creation
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "not-a-valid-url"
+}
+
+### Test Missing Required Headers
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+
+{
+  "url": "https://example.com"
+}
+
+### Test Unauthorized Request (No Auth Token)
+GET {{baseUrl}}/api/urls
+x-user-id: {{userId}}
+
+### ============================================
+### 7. KAFKA TESTING SCENARIOS
+### ============================================
+### These requests specifically test the Kafka communication flow
+
+### Scenario 1: Create URL then immediately access it (Full Flow Test)
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+{
+  "url": "https://docs.kafka.apache.org/",
+  "customCode": "kafka-docs"
+}
+
+### Access the URL we just created (This triggers Kafka event)
+GET {{baseUrl}}/kafka-docs
+User-Agent: Kafka-Test-Agent/1.0
+CF-IPCountry: US
+CF-IPCity: Seattle
+Referer: https://kafka.apache.org
+x-user-id: {{userId}}
+
+### Check if analytics captured the click (Wait a few seconds after the redirect)
+GET {{baseUrl}}/api/analytics/urls/kafka-docs
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### Scenario 2: Multiple clicks from different sources
+GET {{baseUrl}}/kafka-docs
+User-Agent: Chrome/120.0.0.0 Safari/537.36
+CF-IPCountry: CA
+CF-IPCity: Toronto
+Referer: https://reddit.com
+x-user-id: user-canada-123
+
+### 
+GET {{baseUrl}}/kafka-docs
+User-Agent: Firefox/121.0 Gecko/20100101
+CF-IPCountry: DE
+CF-IPCity: Berlin
+Referer: https://stackoverflow.com
+x-user-id: user-germany-456
+
+### Check aggregated analytics
+GET {{baseUrl}}/api/analytics/urls/kafka-docs?groupBy=day
+Authorization: {{authToken}}
+x-user-id: {{userId}}
+
+### ============================================
+### 8. LOAD TESTING (Multiple rapid requests)
+### ============================================
+### Uncomment these for load testing Kafka throughput
+
+# ### Rapid URL Access 1
+# GET {{baseUrl}}/kafka-docs
+# User-Agent: Load-Test-1
+
+# ### Rapid URL Access 2  
+# GET {{baseUrl}}/kafka-docs
+# User-Agent: Load-Test-2
+
+# ### Rapid URL Access 3
+# GET {{baseUrl}}/kafka-docs
+# User-Agent: Load-Test-3
+
+# ### Rapid URL Access 4
+# GET {{baseUrl}}/kafka-docs
+# User-Agent: Load-Test-4
+
+# ### Rapid URL Access 5
+# GET {{baseUrl}}/kafka-docs
+# User-Agent: Load-Test-5
+
+### ============================================
+### 9. COMPLETE AUTHENTICATION WORKFLOW
+### ============================================
+
+### Step 1: Register a new user
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "testuser@example.com",
+  "password": "securePassword123"
+}
+
+### Step 2: Login and get JWT token
+# @name loginWorkflow
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "testuser@example.com", 
+  "password": "securePassword123"
+}
+
+### Step 3: Use the JWT token from login response
+# Copy the 'access_token' from the login response above and use it below
+# or update the @authToken variable at the top of the file
+
+### Step 4: Test authenticated endpoint with new token
+GET {{baseUrl}}/api/urls
+Authorization: Bearer YOUR_TOKEN_FROM_LOGIN_RESPONSE
+x-user-id: YOUR_USER_ID_FROM_LOGIN_RESPONSE
+
+### Step 5: Create URL with authenticated user
+POST {{baseUrl}}/api/urls
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_FROM_LOGIN_RESPONSE
+x-user-id: YOUR_USER_ID_FROM_LOGIN_RESPONSE
+
+{
+  "url": "https://github.com/microsoft/vscode",
+  "customCode": "vscode-auth-test"
+}
+
+### ============================================
+### TESTING INSTRUCTIONS
+### ============================================
+# 
+# AUTHENTICATION FLOW:
+# 1. Start auth service: cd apps/auth && npm run dev (port 3002)
+# 2. Use "Register" endpoint to create a new user
+# 3. Use "Login" endpoint to get JWT token
+# 4. Copy the access_token from login response
+# 5. Update @authToken variable or use token directly in requests
+# 6. Use authenticated endpoints with the valid token
+#
+# To test Kafka communication:
+# 1. Start infrastructure: docker-compose up -d
+# 2. Start auth service: cd apps/auth && npm run dev
+# 3. Start URL shortener: cd apps/url-shortener && npm run dev
+# 4. Start analytics: cd apps/analytics && npm run dev
+# 5. Complete authentication workflow (section 9) to get valid token
+# 6. Run redirect requests (section 4) - these publish to Kafka
+# 7. Check analytics endpoints (section 5) - these show consumed data
+# 8. Monitor console logs in all services for Kafka messages
+#
+# Key endpoints for Kafka testing:
+# - GET /{shortCode} - Publishes click events to Kafka
+# - POST /api/analytics/clicks - Alternative manual event creation
+# - GET /api/analytics/* - Shows processed analytics data
+#
+# Expected flow:
+# 1. Authenticate → Get JWT token
+# 2. Create short URL → URL stored in database
+# 3. Access short URL → URL shortener publishes click event to Kafka
+# 4. Analytics service consumes event → Updates click records and stats  
+# 5. Analytics endpoints return updated data with new click information
+#
+# Variables you can customize:
+# - @baseUrl: Change if running on different host/port (default: Kong gateway port 8000)
+# - @authToken: Update with valid JWT token from login response
+# - @userId: Update with user ID from login response
+# - @email: Update with your test user email
+# - @password: Update with your test user password
+#
+# Services and Ports:
+# - Kong Gateway: :8000 (routes to all services)
+# - Auth Service: :3002 (authentication and JWT tokens)
+# - URL Shortener: :3000 (URL CRUD operations)
+# - Analytics: :3001 (click tracking and analytics)
+# - PostgreSQL: :5432 (databases for each service)
+# - Kafka: :9092 (message broker)

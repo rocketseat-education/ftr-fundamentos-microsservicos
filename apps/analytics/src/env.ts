@@ -1,11 +1,9 @@
-import { z } from 'zod';
+import { createEnvSchema, validateEnv } from '@microservices/shared/core/env.ts'
+import { z } from 'zod'
 
-const envSchema = z.object({
+const analyticsEnvSchema = createEnvSchema({
   PORT: z.coerce.number().default(3001),
-  DATABASE_URL: z.string().url(),
-  KAFKA_BROKERS: z.string().default('localhost:9092'),
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  JWKS_ENDPOINT: z.string().url(),
-});
+  OTEL_SERVICE_NAME: z.string().default('analytics'),
+})
 
-export const env = envSchema.parse(process.env);
+export const env = validateEnv(analyticsEnvSchema)

@@ -2,6 +2,20 @@ _format_version: "3.0"
 _transform: true
 
 services:
+  - name: auth
+    url: http://host.docker.internal:3002
+    routes:
+      - name: auth-routes
+        paths:
+          - /auth
+          - /auth/
+          - /auth/.*
+          - /.well-known/jwks.json
+        methods:
+          - GET
+          - POST
+        strip_path: false
+
   - name: url-shortener
     url: http://host.docker.internal:3000
     routes:
@@ -16,6 +30,20 @@ services:
           - PUT
           - DELETE
         strip_path: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          header_names:
+            - Authorization
+          claims_to_verify:
+            - exp
+            - iss
+            - aud
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
 
   - name: analytics
     url: http://host.docker.internal:3001
@@ -29,6 +57,27 @@ services:
           - GET
           - POST
         strip_path: false
+    plugins:
+      - name: jwt
+        config:
+          uri_param_names:
+            - jwt
+          header_names:
+            - Authorization
+          claims_to_verify:
+            - exp
+            - iss
+            - aud
+          key_claim_name: iss
+          secret_is_base64: false
+          run_on_preflight: false
+
+consumers:
+  - username: auth-service
+    jwt_secrets:
+      - key: url-shortener-auth
+        algorithm: HS256
+        secret: your-super-secret-jwt-key-that-should-be-at-least-32-characters-long
 
 plugins:
   - name: cors

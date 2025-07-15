@@ -1,26 +1,63 @@
-import Fastify from 'fastify';
+// Import tracing first to ensure proper instrumentation
+import './tracing.ts'
+
+import Fastify from 'fastify'
 import {
   serializerCompiler,
   validatorCompiler,
   type ZodTypeProvider,
-} from 'fastify-type-provider-zod';
-import { env } from './env.ts';
+} from 'fastify-type-provider-zod'
+import { env } from './env.ts'
+import { setupAnalyticsErrorHandler } from './lib/error-handler.ts'
+import { kafkaConsumer } from './lib/kafka/index.ts'
+import { registerRoutes } from './routes/index.ts'
 
 const fastify = Fastify({
   logger: true,
-}).withTypeProvider<ZodTypeProvider>();
+}).withTypeProvider<ZodTypeProvider>()
 
-fastify.setValidatorCompiler(validatorCompiler);
-fastify.setSerializerCompiler(serializerCompiler);
+fastify.setValidatorCompiler(validatorCompiler)
+fastify.setSerializerCompiler(serializerCompiler)
+
+// Setup global error handler
+setupAnalyticsErrorHandler(fastify)
+
+// Register all routes
+await fastify.register(registerRoutes)
 
 const start = async () => {
   try {
-    await fastify.listen({ port: env.PORT, host: '0.0.0.0' });
-    console.log(`Analytics service running on port ${env.PORT}`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-};
+    // Initialize Kafka consumer with event registry
+    await kafkaConsumer.initialize()
+    await kafkaConsumer.connect()
 
-start();
+    // Subscribe to topics and start consuming
+    await kafkaConsumer.subscribe()
+    await kafkaConsumer.start()
+
+    await fastify.listen({ port: env.PORT, host: '0.0.0.0' })
+    console.log(`Analytics service running on port ${env.PORT}`)
+  } catch (err) {
+    fastify.log.error(err)
+    process.exit(1)
+  }
+}
+
+// Graceful shutdown
+const shutdown = async () => {
+  console.log('Shutting down gracefully...')
+  try {
+    await kafkaConsumer.disconnect()
+    await fastify.close()
+    console.log('Shutdown complete')
+    process.exit(0)
+  } catch (err) {
+    console.error('Error during shutdown:', err)
+    process.exit(1)
+  }
+}
+
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)
+
+start()
