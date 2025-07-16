@@ -1,4 +1,4 @@
-import { createEnvSchema, validateEnv } from '@microservices/shared/core/env.ts'
+import { createEnvSchema, validateEnv } from '@url-shortener/shared/core/env.ts'
 import { z } from 'zod'
 
 const analyticsEnvSchema = createEnvSchema({

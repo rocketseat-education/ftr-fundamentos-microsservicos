@@ -1,290 +1,83 @@
 # Microservices URL Shortener Project
 
-## Project Overview
+## Overview
 
-This project implements a URL shortener application using a microservices architecture with Node.js, TypeScript, and modern development practices. The system consists of three main services:
-
-1. **Authentication Service** (Port 3002): Handles user registration, login, and JWT token management
-2. **URL Shortener Service** (Port 3000): Handles URL creation, shortening, and redirection
-3. **Analytics Service** (Port 3001): Tracks clicks and generates usage statistics
-
-## Architecture
+URL shortener microservices architecture with Node.js 22, TypeScript, and modern practices.
 
 ### Services
-- **Authentication Service**: User registration, login, JWT token creation and management
-- **URL Shortener Service**: Creates short URLs, handles redirects, validates URLs
-- **Analytics Service**: Tracks clicks, generates usage statistics, stores analytics data
-- **PostgreSQL Databases**: Each service has its own database instance for data isolation
-- **Kafka**: Message broker for asynchronous inter-service communication
-- **Kong API Gateway**: Routes requests to appropriate services and handles JWT authentication
-- **Jaeger**: Distributed tracing system for monitoring and troubleshooting microservices
+1. **Authentication** (Port 3002): JWT-based auth with Argon2id password hashing
+2. **URL Shortener** (Port 3000): Short URL creation and redirection
+3. **Analytics** (Port 3001): Click tracking and statistics
+4. **Orchestrator** (Port 3003): SAGA pattern orchestration with database persistence
 
-### Technology Stack
-- **Runtime**: Node.js 22 LTS with experimental TypeScript stripping
-- **Framework**: Fastify with Type Provider Zod
-- **Database**: PostgreSQL with Drizzle ORM and `pg` driver for OpenTelemetry auto-instrumentation
-- **Validation**: Zod for schema validation and environment variables
-- **Observability**: OpenTelemetry SDK with Jaeger distributed tracing
-- **Linting/Formatting**: Biome 2.0 with Ultracite configuration
-- **Containerization**: Docker and Docker Compose
-- **Message Broker**: Apache Kafka with Zookeeper
-- **API Gateway**: Kong (database-less configuration)
+### Core Technologies
+- **Runtime**: Node.js 22 with `--experimental-strip-types`
+- **Framework**: Fastify + Zod validation
+- **Database**: PostgreSQL with Drizzle ORM
+- **Messaging**: Kafka for async communication
+- **Gateway**: Kong for JWT validation and routing
+- **Tracing**: OpenTelemetry + Jaeger
+- **Code Quality**: Biome with Ultracite config
 
-## Project Structure
+## Key Features
 
-```
-├── apps/
-│   ├── auth/                          # Authentication service
-│   │   ├── src/
-│   │   │   ├── db/
-│   │   │   │   ├── schema.ts          # User and refresh token schemas
-│   │   │   │   └── connection.ts      # Database connection setup
-│   │   │   ├── lib/
-│   │   │   │   ├── jwt.ts             # JWT token utilities
-│   │   │   │   ├── password.ts        # Argon2id password hashing
-│   │   │   │   └── error-handler.ts   # Error handling utilities
-│   │   │   ├── routes/
-│   │   │   │   ├── index.ts           # Route registration
-│   │   │   │   ├── register-user.ts   # User registration route
-│   │   │   │   ├── login-user.ts      # User login route
-│   │   │   │   ├── refresh-token.ts   # Token refresh route
-│   │   │   │   ├── logout-user.ts     # User logout route
-│   │   │   │   ├── get-user-profile.ts # Get user profile route
-│   │   │   │   ├── get-jwks.ts        # JWKS endpoint route
-│   │   │   │   ├── get-jwt-key.ts     # JWT key endpoint route
-│   │   │   │   └── health-check.ts    # Health check route
-│   │   │   ├── services/
-│   │   │   │   └── auth.ts            # Authentication business logic
-│   │   │   ├── env.ts                 # Environment variables validation
-│   │   │   ├── tracing.ts             # OpenTelemetry configuration
-│   │   │   └── server.ts              # Main server entry point
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── biome.json
-│   │   ├── drizzle.config.ts
-│   │   └── .env.example
-│   ├── url-shortener/                 # URL shortener service
-│   │   ├── src/
-│   │   │   ├── db/
-│   │   │   │   ├── schema.ts          # URLs table schema
-│   │   │   │   └── connection.ts      # Database connection setup
-│   │   │   ├── lib/
-│   │   │   │   ├── kafka/             # Kafka event publishing
-│   │   │   │   │   ├── config.ts      # Kafka configuration
-│   │   │   │   │   ├── producer.ts    # Kafka producer
-│   │   │   │   │   └── events/        # Event definitions
-│   │   │   │   │       └── produced.ts # URL creation and click events
-│   │   │   │   └── error-handler.ts   # Error handling utilities
-│   │   │   ├── routes/
-│   │   │   │   ├── index.ts           # Route registration
-│   │   │   │   ├── create-url.ts      # Create URL route
-│   │   │   │   ├── get-url.ts         # Get URL by short code route
-│   │   │   │   ├── list-urls.ts       # List URLs route
-│   │   │   │   ├── update-url.ts      # Update URL route
-│   │   │   │   ├── delete-url.ts      # Delete URL route
-│   │   │   │   ├── redirect-url.ts    # Redirect URL route
-│   │   │   │   └── health-check.ts    # Health check route
-│   │   │   ├── env.ts                 # Environment variables validation
-│   │   │   ├── tracing.ts             # OpenTelemetry configuration
-│   │   │   └── server.ts              # Main server entry point
-│   │   ├── package.json
-│   │   ├── tsconfig.json
-│   │   ├── biome.json
-│   │   ├── drizzle.config.ts
-│   │   └── .env.example
-│   └── analytics/                     # Analytics service
-│       ├── src/
-│       │   ├── db/
-│       │   │   ├── schema.ts          # Analytics and idempotency schemas
-│       │   │   └── connection.ts      # Database connection setup
-│       │   ├── lib/
-│       │   │   ├── kafka/             # Kafka event consumption
-│       │   │   │   ├── config.ts      # Kafka configuration
-│       │   │   │   ├── consumer.ts    # Kafka consumer
-│       │   │   │   └── events/        # Event definitions
-│       │   │   │       └── consumed.ts # Click and URL creation handlers
-│       │   │   └── error-handler.ts   # Error handling utilities
-│       │   ├── routes/
-│       │   │   ├── index.ts                # Route registration
-│       │   │   ├── record-click.ts         # Record click event route
-│       │   │   ├── get-url-analytics.ts    # Get URL analytics route
-│       │   │   ├── get-analytics-overview.ts # Get analytics overview route
-│       │   │   ├── get-realtime-analytics.ts # Get realtime analytics route
-│       │   │   ├── export-analytics.ts     # Export analytics route
-│       │   │   ├── get-url-creations.ts    # Get URL creations route
-│       │   │   ├── get-processed-events.ts # Get processed events route
-│       │   │   └── health-check.ts         # Health check route
-│       │   ├── env.ts                 # Environment variables validation
-│       │   ├── tracing.ts             # OpenTelemetry configuration
-│       │   └── server.ts              # Main server entry point
-│       ├── package.json
-│       ├── tsconfig.json
-│       ├── biome.json
-│       ├── drizzle.config.ts
-│       └── .env.example
-├── shared/                            # Shared utilities package
-│   ├── core/
-│   │   ├── tracing.ts                 # OpenTelemetry initialization
-│   │   └── logger.ts                  # Logging utilities
-│   ├── kafka/
-│   │   └── events/
-│   │       └── types.ts               # Event type definitions
-│   ├── routes/
-│   │   └── health.ts                  # Shared health check route
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── index.ts                       # Main exports
-├── contracts/                         # Event contracts package
-│   ├── events/
-│   │   ├── url-shortener/
-│   │   │   ├── click-event.ts         # Click event schema
-│   │   │   └── url-created-event.ts   # URL creation event schema
-│   │   └── analytics/
-│   │       └── index.ts               # Analytics event exports
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── index.ts                       # Main exports
-├── kong/
-│   └── kong.yml                       # Kong gateway configuration
-├── docker-compose.yml                 # Infrastructure services
-├── client.http                        # HTTP client for testing
-└── CLAUDE.md
+### Event-Driven Architecture
+- **Idempotent Event Processing**: Exactly-once processing with `processedEvents` table
+- **SAGA Pattern**: Distributed transactions for user deletion across services
+- **Kafka Events**: Async communication between services
+
+### Security
+- **Argon2id**: OWASP-recommended password hashing
+- **JWT + JWKS**: Token validation at Kong Gateway
+- **User Context Injection**: Services receive authenticated user info via headers
+
+### Development Experience  
+- **TypeScript Stripping**: Run `.ts` files directly (no build step)
+- **Watch Mode**: Auto-restart on file changes
+- **Native Test Runner**: Built-in Node.js testing
+
+## Quick Start
+
+```bash
+# 1. Start infrastructure
+docker-compose up -d
+
+# 2. Install dependencies (in each service)
+cd apps/auth && npm install
+cd ../url-shortener && npm install  
+cd ../analytics && npm install
+cd ../orchestrator && npm install
+
+# 3. Run migrations
+cd apps/auth && npm run db:push
+cd ../url-shortener && npm run db:push
+cd ../analytics && npm run db:push
+cd ../orchestrator && npm run db:push
+
+# 4. Start services (separate terminals)
+cd apps/auth && npm run dev
+cd apps/url-shortener && npm run dev
+cd apps/analytics && npm run dev
+cd apps/orchestrator && npm run dev
 ```
 
-## Node.js Built-in Features Used
+## Environment Variables
 
-### 1. Watch Mode (`--watch`)
-- Automatically restarts the server when files change
-- Used in development scripts for both services
+### Common
+- `PORT`: Service port
+- `DATABASE_URL`: PostgreSQL connection
+- `NODE_ENV`: development/production/test
+- `OTEL_SERVICE_NAME`: Service name for tracing
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: http://localhost:4318/v1/traces
 
-### 2. Experimental TypeScript Stripping (`--experimental-strip-types`)
-- Runs TypeScript files directly without compilation
-- Eliminates build step for faster development
+### Auth Service
+- `JWT_SECRET`: Min 32 chars
+- `JWT_ISSUER`: url-shortener-auth
+- `JWT_AUDIENCE`: url-shortener-api
 
-### 3. Environment File Loading (`--env-file`)
-- Loads environment variables from `.env` files
-- Supports separate test environment files
-
-### 4. Built-in Test Runner (`--test`)
-- Uses Node.js native test runner
-- No external testing framework required
-
-## Database Schema
-
-Both services use text-based IDs with CUID2 for better performance, security, and URL-friendliness. Schemas are simplified with only essential timestamp columns and include strict validation.
-
-### URL Shortener Service Schema
-```typescript
-export const urls = pgTable('urls', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  originalUrl: text('original_url').notNull(),
-  shortCode: text('short_code').notNull().unique(),
-  clickCount: integer('click_count').default(0),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-```
-
-### Analytics Service Schema
-```typescript
-export const clicks = pgTable('clicks', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  shortCode: text('short_code').notNull(),
-  userAgent: text('user_agent'),
-  ipAddress: text('ip_address'),
-  country: text('country'),
-  city: text('city'),
-  referer: text('referer'),
-  metadata: jsonb('metadata'),
-  clickedAt: timestamp('clicked_at').defaultNow().notNull(),
-});
-
-export const urlStats = pgTable('url_stats', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  shortCode: text('short_code').notNull().unique(),
-  totalClicks: integer('total_clicks').default(0),
-  uniqueClicks: integer('unique_clicks').default(0),
-});
-
-// Idempotency tables
-export const processedEvents = pgTable('processed_events', {
-  eventId: text('event_id').primaryKey(),
-  eventType: text('event_type').notNull(),
-  processedAt: timestamp('processed_at').defaultNow().notNull(),
-  ttlExpiresAt: timestamp('ttl_expires_at'),
-});
-
-export const urlCreations = pgTable('url_creations', {
-  id: text('id').primaryKey().$defaultFn(() => createId()),
-  eventId: text('event_id').notNull().unique(),
-  urlId: text('url_id').notNull(),
-  shortCode: text('short_code').notNull(),
-  originalUrl: text('original_url').notNull(),
-  userId: text('user_id'),
-  createdAt: timestamp('created_at').notNull(),
-  metadata: jsonb('metadata'),
-});
-```
-
-## Distributed Tracing with OpenTelemetry
-
-### Overview
-The project uses OpenTelemetry for distributed tracing with Jaeger as the backend. This provides comprehensive observability across the microservices architecture, allowing you to trace requests as they flow through different services.
-
-### Architecture
-- **OpenTelemetry SDK**: Automatically instruments HTTP requests, database queries, and Kafka operations
-- **OTLP HTTP Exporter**: Modern OpenTelemetry Protocol for sending traces to Jaeger
-- **Jaeger**: Collects, stores, and visualizes trace data via OTLP
-- **Auto-instrumentation**: Automatically traces Fastify routes, PostgreSQL queries (via `pg` driver), and Kafka operations
-
-### Key Components
-
-#### 1. OpenTelemetry Configuration (`tracing.ts`)
-Each service has its own tracing configuration that:
-- Initializes the OpenTelemetry SDK with service-specific metadata
-- Configures OTLP HTTP exporter for modern trace collection
-- Enables auto-instrumentation for common libraries (HTTP, database, Kafka)
-- Sets up resource attributes for service identification
-
-#### 2. OTLP and Jaeger Integration
-- **OTLP HTTP Endpoint**: http://localhost:4318/v1/traces (modern OpenTelemetry Protocol)
-- **Jaeger UI**: Available at http://localhost:16686
-- **Backward Compatibility**: Jaeger also accepts legacy endpoints (14268, 14250)
-
-#### 3. Auto-instrumentation Features
-- **HTTP Requests**: Automatic tracing of incoming and outgoing HTTP requests
-- **Database Queries**: PostgreSQL queries traced via `pg` driver instrumentation
-- **Kafka Operations**: Producer and consumer operations automatically traced
-- **Error Tracking**: Automatic error capture and span marking
-- **Performance Metrics**: Response times, queue times, and throughput metrics
-
-### Database Driver Migration
-The project migrated from the `postgres` package to the `pg` package specifically to enable OpenTelemetry auto-instrumentation:
-
-**Before (postgres package):**
-```typescript
-import postgres from 'postgres';
-const connection = postgres(env.DATABASE_URL);
-```
-
-**After (pg package):**
-```typescript
-import { Pool } from 'pg';
-const pool = new Pool({ connectionString: env.DATABASE_URL });
-```
-
-This change enables automatic tracing of all database operations without additional code changes.
-
-### Trace Correlation
-- **Service-to-Service**: Traces automatically correlate requests across microservices
-- **Request Context**: Each request maintains context through the entire call chain
-- **Error Correlation**: Errors are automatically linked to their originating traces
-- **Performance Analysis**: Identify bottlenecks and latency issues across services
-
-### Development Workflow
-1. **Start Infrastructure**: `docker-compose up -d` includes Jaeger automatically
-2. **View Traces**: Navigate to http://localhost:16686 for Jaeger UI
-3. **Generate Traffic**: Make requests to your services to generate traces
-4. **Analyze Performance**: Use Jaeger to identify slow operations and errors
+### URL/Analytics Services
+- `KAFKA_BROKERS`: localhost:9092
+- `JWKS_ENDPOINT`: http://localhost:3002/.well-known/jwks.json
 
 ## Authentication Architecture
 
@@ -919,6 +712,245 @@ Both services use Biome 2.1.1 with official Ultracite configuration for enterpri
 - Database connection monitoring per service
 - Kafka consumer lag monitoring
 - Centralized logging through Kong gateway
+
+## SAGA Pattern Implementation
+
+### Overview
+The project implements a comprehensive SAGA pattern for managing distributed transactions across microservices. The primary use case is user account deletion, which requires coordinated actions across all three services.
+
+### Architecture Design
+
+#### **Generic SAGA Infrastructure**
+The SAGA implementation uses a generic, metadata-driven approach that can handle multiple saga types:
+
+- **Generic Database Tables**: Single `sagas` and `saga_steps` tables handle all saga types
+- **Extensible Design**: New saga types can be added without schema changes
+- **Metadata-Driven**: Flexible data storage using JSONB for different saga requirements
+- **Type Safety**: Strong TypeScript contracts across all components
+
+#### **Key Components**
+
+**1. SAGA Orchestrator Service** (`/apps/orchestrator/`):
+- Dedicated microservice for saga orchestration
+- Database-backed saga persistence (PostgreSQL)
+- Manages saga execution lifecycle and step coordination
+- Implements compensation logic for failed sagas
+- Provides HTTP API for saga management
+
+**2. SAGA Consumer Infrastructure** (`/shared/saga/consumer.ts`):
+- Shared consumer pattern for handling saga commands
+- Used by all services to process saga steps
+- Supports both forward and compensation operations
+- Automatic result reporting back to orchestrator
+
+**3. HTTP Orchestrator Client** (`/shared/saga/orchestrator.ts`):
+- HTTP client for communicating with orchestrator service
+- Used by services to initiate sagas
+- Provides saga status checking and monitoring
+- Lightweight alternative to in-memory orchestration
+
+**4. SAGA Types and Contracts** (`/shared/saga/types.ts`):
+- Common saga interfaces and types
+- Shared across all services for consistency
+- Type-safe saga command and result handling
+
+### User Deletion SAGA Flow
+
+#### **SAGA Definition**
+```typescript
+{
+  type: 'user-deletion',
+  timeout: 5 * 60 * 1000, // 5 minutes
+  steps: [
+    {
+      stepNumber: 1,
+      stepType: 'delete-user-urls',
+      targetService: 'url-shortener',
+      endpoint: 'url-shortener:/api/admin/users/:userId/urls',
+      method: 'DELETE',
+      compensation: {
+        endpoint: 'url-shortener:/api/admin/users/:userId/urls/restore',
+        method: 'POST',
+      },
+    },
+    {
+      stepNumber: 2,
+      stepType: 'delete-user-analytics',
+      targetService: 'analytics',
+      endpoint: 'analytics:/api/admin/users/:userId/analytics',
+      method: 'DELETE',
+      compensation: {
+        endpoint: 'analytics:/api/admin/users/:userId/analytics/restore',
+        method: 'POST',
+      },
+    },
+    {
+      stepNumber: 3,
+      stepType: 'delete-user-account',
+      targetService: 'auth',
+      endpoint: 'auth:/api/admin/users/:userId',
+      method: 'DELETE',
+      compensation: {
+        endpoint: 'auth:/api/admin/users/:userId/restore',
+        method: 'POST',
+      },
+    },
+  ],
+}
+```
+
+#### **Execution Flow**
+1. **Initiation**: Admin calls `DELETE /admin/users/:userId` on auth service
+2. **SAGA Creation**: Orchestrator creates saga instance and step records
+3. **Step Execution**: Each step executes in sequence:
+   - Delete user URLs (URL Shortener service)
+   - Delete user analytics (Analytics service)
+   - Delete user account (Auth service)
+4. **Success**: SAGA completes successfully, all data is soft-deleted
+5. **Failure**: If any step fails, compensation is triggered in reverse order
+
+#### **Compensation Flow**
+If any step fails, the SAGA orchestrator:
+1. Marks the saga as 'failed' and 'compensating'
+2. Executes compensation steps in reverse order
+3. Restores data from previously completed steps
+4. Publishes compensation events for monitoring
+
+### Database Schema
+
+#### **SAGA Tables** (Auth Service):
+```sql
+CREATE TABLE sagas (
+  id TEXT PRIMARY KEY,
+  saga_type TEXT NOT NULL,           -- 'user-deletion', 'order-processing', etc.
+  saga_id TEXT NOT NULL,             -- Business identifier (userId, orderId, etc.)
+  status TEXT NOT NULL,              -- 'pending', 'completed', 'failed', 'compensating'
+  current_step INTEGER DEFAULT 0,    -- Current step in execution
+  total_steps INTEGER NOT NULL,      -- Total steps in this saga type
+  started_at TIMESTAMP DEFAULT NOW() NOT NULL,
+  completed_at TIMESTAMP,
+  error_message TEXT,
+  metadata JSONB,                    -- Flexible data for different saga types
+  created_by TEXT,                   -- Which service initiated the saga
+  timeout_at TIMESTAMP               -- For handling timeouts
+);
+
+CREATE TABLE saga_steps (
+  id TEXT PRIMARY KEY,
+  saga_id TEXT NOT NULL REFERENCES sagas(id) ON DELETE CASCADE,
+  step_number INTEGER NOT NULL,
+  step_type TEXT NOT NULL,           -- 'delete-urls', 'delete-analytics', etc.
+  target_service TEXT NOT NULL,      -- 'url-shortener', 'analytics', 'auth'
+  status TEXT NOT NULL,              -- 'pending', 'completed', 'failed', 'compensated'
+  request_payload JSONB,             -- Data sent to service
+  response_payload JSONB,            -- Response from service
+  compensation_payload JSONB,        -- Data needed for compensation
+  started_at TIMESTAMP,
+  completed_at TIMESTAMP,
+  error_message TEXT
+);
+```
+
+#### **Soft Delete Support**:
+All services support soft delete for compensation:
+- **Users**: `deleted_at` field for user soft delete
+- **URLs**: `deleted_at` field for URL soft delete  
+- **Analytics**: `deleted_at` field for clicks and URL creations
+
+### API Endpoints
+
+#### **SAGA Orchestrator Service (Port 3003)**:
+- `POST /saga/start` - Start a new saga (takes sagaType, businessId, metadata)
+- `GET /saga/:sagaId/status` - Get saga status and progress
+- `GET /saga` - List all sagas
+- `GET /health` - Health check endpoint
+
+#### **SAGA Initiation (Auth Service)**:
+- `DELETE /admin/users/:userId` - Triggers user deletion SAGA via orchestrator
+
+#### **SAGA Step Endpoints**:
+- `DELETE /api/admin/users/:userId/urls` - Delete user URLs
+- `POST /api/admin/users/:userId/urls/restore` - Restore user URLs
+- `DELETE /api/admin/users/:userId/analytics` - Delete user analytics
+- `POST /api/admin/users/:userId/analytics/restore` - Restore user analytics
+- `DELETE /api/admin/users/:userId` - Delete user account
+- `POST /api/admin/users/:userId/restore` - Restore user account
+
+### Event-Driven Monitoring
+
+#### **SAGA Events** (Published to Kafka):
+- `saga.started` - SAGA execution begins
+- `saga.step.started` - Step execution begins
+- `saga.step.completed` - Step execution completes
+- `saga.completed` - SAGA successfully completes
+- `saga.failed` - SAGA fails and compensation is triggered
+- `saga.compensation.started` - Compensation begins
+- `saga.compensation.completed` - Compensation completes
+- `saga.timeout` - SAGA times out
+
+#### **Event Contracts** (`/contracts/events/saga/saga-events.ts`):
+All events use strongly typed Zod schemas for validation and type safety.
+
+### Educational Value
+
+This implementation demonstrates key distributed systems concepts:
+
+1. **Distributed Transaction Management**: Coordinates actions across multiple services
+2. **Compensation Pattern**: Implements rollback mechanisms for failed operations
+3. **Event-Driven Architecture**: Uses Kafka for saga monitoring and observability
+4. **Idempotency**: Ensures operations can be safely retried
+5. **Soft Delete Pattern**: Enables compensation without data loss
+6. **Generic Design**: Extensible infrastructure for multiple saga types
+7. **Type Safety**: End-to-end type safety with TypeScript and Zod
+8. **Observability**: Comprehensive event publishing for monitoring
+
+### Testing the SAGA Pattern
+
+#### **Successful Flow**:
+```bash
+# Trigger user deletion
+curl -X DELETE http://localhost:8000/auth/admin/users/USER_ID
+
+# Response includes sagaId for tracking
+{
+  "success": true,
+  "sagaId": "cm123456789",
+  "message": "User deletion process initiated"
+}
+```
+
+#### **Monitoring SAGA Progress**:
+Monitor saga progress through the orchestrator service:
+- Check saga status: `GET http://localhost:3003/saga/SAGA_ID/status`
+- List all sagas: `GET http://localhost:3003/saga`
+- Check orchestrator database `sagas` table for current status
+- Check orchestrator database `saga_steps` table for step-by-step progress
+- Monitor Kafka events on the `saga-events` topic
+- Use Jaeger for distributed tracing across services
+
+#### **Failure Scenarios**:
+Test compensation by:
+1. Stopping a service during execution
+2. Introducing database errors
+3. Network timeouts
+4. Invalid data scenarios
+
+### Performance Considerations
+
+- **Async Processing**: SAGA execution is non-blocking
+- **Database Transactions**: Each step uses database transactions for consistency
+- **Kafka Performance**: Event publishing is asynchronous and non-blocking
+- **Timeout Handling**: Configurable timeouts prevent stuck sagas
+- **Retry Logic**: Built-in retry mechanisms for transient failures
+
+### Future SAGA Enhancements
+
+- Additional saga types (order processing, payment handling)
+- SAGA monitoring dashboard
+- Automatic retry configuration
+- Circuit breaker integration
+- Saga replay capabilities
+- Performance metrics collection
 
 ## Future Enhancements
 

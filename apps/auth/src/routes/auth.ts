@@ -40,7 +40,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       try {
         const result = await authService.register(request.body)
         return reply.status(201).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           error instanceof Error &&
           error.message.includes('already exists')
@@ -79,7 +79,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       try {
         const result = await authService.login(request.body)
         return reply.status(200).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           error instanceof Error &&
           error.message.includes('Invalid credentials')
@@ -115,7 +115,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
           request.body.refreshToken
         )
         return reply.status(200).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           (error instanceof Error && error.message.includes('Invalid')) ||
           (error instanceof Error && error.message.includes('expired'))
@@ -141,7 +141,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
       try {
         await authService.revokeRefreshToken(request.body.refreshToken)
         return reply.status(200).send({ message: 'Logged out successfully' })
-      } catch (error) {
+      } catch (error: any) {
         throw error
       }
     }
@@ -181,7 +181,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
           isActive: user.isActive ?? false,
           createdAt: user.createdAt.toISOString(),
         })
-      } catch (error) {
+      } catch (error: any) {
         if (error instanceof Error && error.message.includes('not found')) {
           throw new NotFoundError('User not found')
         }

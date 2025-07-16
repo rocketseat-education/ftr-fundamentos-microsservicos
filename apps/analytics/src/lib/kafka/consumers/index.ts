@@ -1,4 +1,4 @@
-import type { ConsumedEventEntry } from '@microservices/shared/kafka/events/types.ts'
+import type { ConsumedEventEntry } from '@url-shortener/shared/kafka/events/types.ts'
 import { TOPICS } from '../config.ts'
 import { clickEventConsumer } from './click-event-consumer.ts'
 import { urlCreatedEventConsumer } from './url-created-event-consumer.ts'

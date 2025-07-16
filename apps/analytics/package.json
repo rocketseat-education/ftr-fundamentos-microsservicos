@@ -15,7 +15,8 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@microservices/shared": "file:../../shared",
+    "@url-shortener/shared": "file:../../shared",
+    "@url-shortener/orchestrator": "file:../orchestrator",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/auto-instrumentations-node": "^0.52.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.56.0",
@@ -28,7 +29,6 @@
     "fastify-type-provider-zod": "^4.0.2",
     "kafkajs": "^2.2.4",
     "pg": "^8.13.1",
-    "postgres": "3.4.7",
     "zod": "^3.24.1"
   },
   "devDependencies": {

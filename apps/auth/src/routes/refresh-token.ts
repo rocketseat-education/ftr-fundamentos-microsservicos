@@ -26,7 +26,7 @@ export const refreshToken: FastifyPluginAsyncZod = async (fastify) => {
           request.body.refreshToken
         )
         return reply.status(200).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           (error instanceof Error && error.message.includes('Invalid')) ||
           (error instanceof Error && error.message.includes('expired'))

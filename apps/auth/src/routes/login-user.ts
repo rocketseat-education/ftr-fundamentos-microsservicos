@@ -32,7 +32,7 @@ export const loginUser: FastifyPluginAsyncZod = async (fastify) => {
       try {
         const result = await authService.login(request.body)
         return reply.status(200).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           error instanceof Error &&
           error.message.includes('Invalid credentials')

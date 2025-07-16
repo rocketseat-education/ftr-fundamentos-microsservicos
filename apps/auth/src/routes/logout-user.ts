@@ -18,7 +18,7 @@ export const logoutUser: FastifyPluginAsyncZod = async (fastify) => {
       try {
         await authService.revokeRefreshToken(request.body.refreshToken)
         return reply.status(200).send({ message: 'Logged out successfully' })
-      } catch (error) {
+      } catch (error: any) {
         throw error
       }
     }

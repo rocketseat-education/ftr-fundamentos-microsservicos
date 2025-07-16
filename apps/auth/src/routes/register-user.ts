@@ -34,7 +34,7 @@ export const registerUser: FastifyPluginAsyncZod = async (fastify) => {
       try {
         const result = await authService.register(request.body)
         return reply.status(201).send(result)
-      } catch (error) {
+      } catch (error: any) {
         if (
           error instanceof Error &&
           error.message.includes('already exists')

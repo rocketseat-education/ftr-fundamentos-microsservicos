@@ -1,4 +1,4 @@
-import { setupErrorHandler } from '@microservices/shared/errors/handler.ts'
+import { setupErrorHandler } from '@url-shortener/shared/errors/handler.ts'
 import type { FastifyInstance } from 'fastify'
 
 export function setupAnalyticsErrorHandler(fastify: FastifyInstance) {
@@ -19,4 +19,4 @@ export {
   NotFoundError,
   UnauthorizedError,
   ValidationError,
-} from '@microservices/shared/errors/base-errors.ts'
+} from '@url-shortener/shared/errors/base-errors.ts'

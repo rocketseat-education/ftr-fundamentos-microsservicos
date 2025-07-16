@@ -9,7 +9,7 @@ import { getUrlCreations } from './get-url-creations.ts'
 import { getProcessedEvents } from './get-processed-events.ts'
 
 export async function registerRoutes(fastify: FastifyInstance) {
-  // Register all route modules
+  // Register core business logic routes
   await fastify.register(healthCheck)
   await fastify.register(recordClick)
   await fastify.register(getUrlAnalytics)
@@ -18,4 +18,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   await fastify.register(exportAnalytics)
   await fastify.register(getUrlCreations)
   await fastify.register(getProcessedEvents)
+  
+  // SAGA operations are now handled via Kafka consumers
+  // No need for HTTP endpoints for SAGA steps
 }

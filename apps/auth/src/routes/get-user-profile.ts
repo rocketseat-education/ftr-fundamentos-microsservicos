@@ -39,7 +39,7 @@ export const getUserProfile: FastifyPluginAsyncZod = async (fastify) => {
           isActive: user.isActive ?? false,
           createdAt: user.createdAt.toISOString(),
         })
-      } catch (error) {
+      } catch (error: any) {
         if (error instanceof Error && error.message.includes('not found')) {
           throw new NotFoundError('User not found')
         }

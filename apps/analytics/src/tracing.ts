@@ -1,4 +1,4 @@
-import { initializeTracing } from '@microservices/shared/core/tracing.ts'
+import { initializeTracing } from '@url-shortener/shared/core/tracing.ts'
 import type { NodeSDK } from '@opentelemetry/sdk-node'
 import { env } from './env.ts'
 

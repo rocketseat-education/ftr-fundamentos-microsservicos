@@ -1,4 +1,4 @@
-import type { EventHandler } from '@microservices/shared/kafka/events/types.ts'
+import type { EventHandler } from '@url-shortener/shared/kafka/events/types.ts'
 import { createId } from '@paralleldrive/cuid2'
 import type { ClickEventPayload } from '@url-shortener/contracts'
 import { sql } from 'drizzle-orm'

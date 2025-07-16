@@ -39,9 +39,6 @@ services:
             - Authorization
           claims_to_verify:
             - exp
-            - iss
-            - aud
-          key_claim_name: iss
           secret_is_base64: false
           run_on_preflight: false
 
@@ -66,9 +63,6 @@ services:
             - Authorization
           claims_to_verify:
             - exp
-            - iss
-            - aud
-          key_claim_name: iss
           secret_is_base64: false
           run_on_preflight: false
 

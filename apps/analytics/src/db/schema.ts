@@ -6,12 +6,14 @@ export const clicks = pgTable('clicks', {
     .primaryKey()
     .$defaultFn(() => createId()),
   shortCode: text('short_code').notNull(),
+  userId: text('user_id'), // User associated with the click (for user deletion)
   userAgent: text('user_agent'),
   ipAddress: text('ip_address'),
   country: text('country'),
   city: text('city'),
   referer: text('referer'),
   metadata: jsonb('metadata'),
+  deletedAt: timestamp('deleted_at'), // Soft delete support for SAGA compensation
   clickedAt: timestamp('clicked_at').defaultNow().notNull(),
 })
 
@@ -42,6 +44,7 @@ export const urlCreations = pgTable('url_creations', {
   shortCode: text('short_code').notNull(),
   originalUrl: text('original_url').notNull(),
   userId: text('user_id'),
+  deletedAt: timestamp('deleted_at'), // Soft delete support for SAGA compensation
   createdAt: timestamp('created_at').notNull(),
   metadata: jsonb('metadata'),
 })

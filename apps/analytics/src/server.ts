@@ -11,10 +11,9 @@ import { env } from './env.ts'
 import { setupAnalyticsErrorHandler } from './lib/error-handler.ts'
 import { kafkaConsumer } from './lib/kafka/index.ts'
 import { registerRoutes } from './routes/index.ts'
+import { analyticsSagaStepConsumer } from './lib/kafka/saga-step-consumer.ts'
 
-const fastify = Fastify({
-  logger: true,
-}).withTypeProvider<ZodTypeProvider>()
+const fastify = Fastify().withTypeProvider<ZodTypeProvider>()
 
 fastify.setValidatorCompiler(validatorCompiler)
 fastify.setSerializerCompiler(serializerCompiler)
@@ -27,13 +26,14 @@ await fastify.register(registerRoutes)
 
 const start = async () => {
   try {
-    // Initialize Kafka consumer with event registry
+    // Initialize Kafka consumers
     await kafkaConsumer.initialize()
     await kafkaConsumer.connect()
-
-    // Subscribe to topics and start consuming
     await kafkaConsumer.subscribe()
     await kafkaConsumer.start()
+    
+    // Initialize SAGA step consumer
+    await analyticsSagaStepConsumer.initialize()
 
     await fastify.listen({ port: env.PORT, host: '0.0.0.0' })
     console.log(`Analytics service running on port ${env.PORT}`)
@@ -47,6 +47,7 @@ const start = async () => {
 const shutdown = async () => {
   console.log('Shutting down gracefully...')
   try {
+    await analyticsSagaStepConsumer.shutdown()
     await kafkaConsumer.disconnect()
     await fastify.close()
     console.log('Shutdown complete')

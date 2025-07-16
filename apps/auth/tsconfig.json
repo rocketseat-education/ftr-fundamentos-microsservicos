@@ -12,12 +12,17 @@
     "declaration": true,
     "allowImportingTsExtensions": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@url-shortener/shared/*": ["../../shared/*"],
+      "@url-shortener/contracts/*": ["../../contracts/*"],
+      "@url-shortener/orchestrator/*": ["../orchestrator/src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
