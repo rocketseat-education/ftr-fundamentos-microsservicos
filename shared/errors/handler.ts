@@ -59,10 +59,10 @@ export function setupErrorHandler(
         return reply.status(400).send({
           error: 'Validation Error',
           message: 'Invalid request data',
-          details: zodError.issues.map((issue) => ({
+          details: zodError?.issues?.map((issue) => ({
             path: issue.path.join('.'),
             message: issue.message,
-          })),
+          })) || [{ path: 'unknown', message: error.message }],
         })
       }
 

@@ -1,6 +1,3 @@
-// Import tracing first to ensure proper instrumentation
-import './tracing.ts'
-
 import Fastify from 'fastify'
 import {
   serializerCompiler,

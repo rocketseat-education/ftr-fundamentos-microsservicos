@@ -8,11 +8,6 @@ export const baseEnvSchema = z.object({
   DATABASE_URL: z.string().url(),
   KAFKA_BROKERS: z.string().default('localhost:9092'),
   JWKS_ENDPOINT: z.string().url().optional(),
-  OTEL_SERVICE_VERSION: z.string().default('1.0.0'),
-  OTEL_EXPORTER_OTLP_ENDPOINT: z
-    .string()
-    .url()
-    .default('http://localhost:4318/v1/traces'),
 })
 
 export type BaseEnv = z.infer<typeof baseEnvSchema>

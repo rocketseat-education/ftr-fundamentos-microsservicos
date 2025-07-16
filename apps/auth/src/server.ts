@@ -1,6 +1,3 @@
-// Import tracing first to ensure proper instrumentation
-import './tracing.ts'
-
 import Fastify from 'fastify'
 import {
   serializerCompiler,
@@ -13,7 +10,9 @@ import { registerRoutes } from './routes/index.ts'
 import { authOrchestrationService } from './lib/orchestration.ts'
 import { authSagaStepConsumer } from './lib/kafka/saga-step-consumer.ts'
 
-const fastify = Fastify().withTypeProvider<ZodTypeProvider>()
+const fastify = Fastify({
+  logger: true,
+}).withTypeProvider<ZodTypeProvider>()
 
 fastify.setValidatorCompiler(validatorCompiler)
 fastify.setSerializerCompiler(serializerCompiler)

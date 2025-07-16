@@ -71,7 +71,7 @@ export const createUrl: FastifyPluginAsyncZod = async (fastify) => {
           .returning()
 
         // Publish URL creation event to Kafka (fire-and-forget)
-        publishUrlCreatedEvent({
+        await publishUrlCreatedEvent({
           eventId: createId(),
           urlId: createdUrl.id,
           shortCode: createdUrl.shortCode,

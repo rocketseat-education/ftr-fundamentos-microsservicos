@@ -68,7 +68,7 @@ cd apps/orchestrator && npm run dev
 - `DATABASE_URL`: PostgreSQL connection
 - `NODE_ENV`: development/production/test
 - `OTEL_SERVICE_NAME`: Service name for tracing
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: http://localhost:4318/v1/traces
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: http://localhost:4318
 
 ### Auth Service
 - `JWT_SECRET`: Min 32 chars
@@ -403,7 +403,7 @@ Environment variables are validated using Zod schemas. Authentication is handled
 - `JWT_REFRESH_EXPIRES_IN`: Refresh token expiration (default: 30d)
 - `OTEL_SERVICE_NAME`: OpenTelemetry service name (default: auth)
 - `OTEL_SERVICE_VERSION`: OpenTelemetry service version (default: 1.0.0)
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318/v1/traces)
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318)
 
 ### URL Shortener Service
 - `PORT`: Server port (default: 3000)
@@ -413,7 +413,7 @@ Environment variables are validated using Zod schemas. Authentication is handled
 - `JWKS_ENDPOINT`: JWKS endpoint for JWT validation
 - `OTEL_SERVICE_NAME`: OpenTelemetry service name (default: url-shortener)
 - `OTEL_SERVICE_VERSION`: OpenTelemetry service version (default: 1.0.0)
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318/v1/traces)
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318)
 
 ### Analytics Service
 - `PORT`: Server port (default: 3001)
@@ -423,7 +423,7 @@ Environment variables are validated using Zod schemas. Authentication is handled
 - `JWKS_ENDPOINT`: JWKS endpoint for JWT validation
 - `OTEL_SERVICE_NAME`: OpenTelemetry service name (default: analytics)
 - `OTEL_SERVICE_VERSION`: OpenTelemetry service version (default: 1.0.0)
-- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318/v1/traces)
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP HTTP endpoint (default: http://localhost:4318)
 
 ## Package.json Scripts
 

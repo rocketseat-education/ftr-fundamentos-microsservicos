@@ -11,6 +11,7 @@ import { deleteUser } from './delete-user.ts'
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Register core business logic routes
+  await fastify.register(deleteUser) // Entry point for user deletion SAGA
   await fastify.register(healthCheck)
   await fastify.register(getJwks)
   await fastify.register(getJwtKey)
@@ -19,7 +20,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
   await fastify.register(refreshToken)
   await fastify.register(logoutUser)
   await fastify.register(getUserProfile)
-  await fastify.register(deleteUser) // Entry point for user deletion SAGA
   
   // SAGA operations are now handled via Kafka consumers
   // No need for HTTP endpoints for SAGA steps

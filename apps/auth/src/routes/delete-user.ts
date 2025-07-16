@@ -17,7 +17,7 @@ const deleteUserResponseSchema = z.object({
 
 export const deleteUser: FastifyPluginAsyncZod = async (fastify) => {
   fastify.delete(
-    '/admin/users/:userId',
+    '/users/:userId',
     {
       schema: {
         params: deleteUserParamsSchema,
@@ -46,7 +46,7 @@ export const deleteUser: FastifyPluginAsyncZod = async (fastify) => {
           .limit(1)
 
         if (existingUser.length === 0) {
-          return reply.status(404).send({
+          return reply.status(400).send({
             error: 'USER_NOT_FOUND',
             message: 'User not found or already deleted'
           })

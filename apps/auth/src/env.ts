@@ -13,7 +13,6 @@ const authEnvSchema = createEnvSchema({
   JWT_EXPIRES_IN: z.string().default('1h'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   KAFKA_BROKERS: z.string().default('localhost:9092'),
-  OTEL_SERVICE_NAME: z.string().default('auth'),
 })
 
 export const env = validateEnv(authEnvSchema)

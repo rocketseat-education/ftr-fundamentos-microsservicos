@@ -77,7 +77,7 @@ help:
 
 # Complete setup
 .PHONY: setup
-setup: env-setup infra-up install db-push
+setup: env-setup infra-up install db-generate db-migrate
 	@echo "$(GREEN)✓ Setup complete! You can now run 'make dev' to start all services.$(NC)"
 
 # Environment setup

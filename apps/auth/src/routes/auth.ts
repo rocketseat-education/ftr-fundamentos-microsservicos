@@ -6,6 +6,7 @@ import {
   ConflictError,
   NotFoundError,
 } from '../lib/error-handler.ts'
+import { authOrchestrationService } from 'src/lib/orchestration.ts'
 
 export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
   const authService = new AuthService()
@@ -78,6 +79,7 @@ export const authRoutes: FastifyPluginAsyncZod = async (fastify) => {
     async (request, reply) => {
       try {
         const result = await authService.login(request.body)
+        await authOrchestrationService.requestUserDeletion(result.user.id)
         return reply.status(200).send(result)
       } catch (error: any) {
         if (

@@ -1,4 +1,5 @@
-import './tracing.ts'
+// import './tracing.ts'
+
 import Fastify from 'fastify'
 import {
   serializerCompiler,
@@ -8,16 +9,14 @@ import {
 import { env } from './env.ts'
 import { db } from './db/connection.ts'
 import { sagas as sagasTable, sagaSteps as sagaStepsTable } from './db/schema.ts'
-import { 
+import {
   SimpleSagaOrchestrator,
   DrizzleSagaDatabase,
-  KafkaSagaEventPublisher,
-  HttpSagaServiceClient
+  KafkaSagaEventPublisher
 } from './saga/index.ts'
 import { KafkaSagaServiceClient } from './saga/kafka-service-client.ts'
 import { createKafkaInstance, SharedKafkaProducer, SharedKafkaConsumer, TOPICS, CONSUMER_GROUPS } from '@url-shortener/shared/kafka/index.ts'
-import { SAGA_TYPES } from '@url-shortener/shared/saga/index.ts'
-import { OrchestrationRequestSchema, OrchestrationResponseSchema, type OrchestrationRequest, type OrchestrationResponse } from '@url-shortener/shared/orchestration/index.ts'
+import { type OrchestrationRequest, type OrchestrationResponse } from '@url-shortener/shared/orchestration/index.ts'
 import { OrchestrationRegistry, createUserDeletionHandler } from './orchestration/index.ts'
 import { z } from 'zod'
 

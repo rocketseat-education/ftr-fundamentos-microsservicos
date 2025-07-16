@@ -1,6 +1,5 @@
 // Core utilities
 export * from './core/env.ts'
-export * from './core/tracing.ts'
 
 // Error handling
 export * from './errors/base-errors.ts'
