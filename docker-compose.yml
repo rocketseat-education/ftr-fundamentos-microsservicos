@@ -35,6 +35,18 @@ services:
     networks:
       - microservices-network
 
+  # PostgreSQL for Orchestrator
+  orchestrator-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=orchestrator
+    volumes:
+      - orchestrator_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+
   # Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -102,6 +114,7 @@ volumes:
   url_shortener_data:
   analytics_data:
   auth_data:
+  orchestrator_data:
 
 networks:
   microservices-network:
