@@ -4,9 +4,9 @@
 # 
 # Variables for easy configuration
 @baseUrl = http://localhost:8000
-@authToken = Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmajZpcnd0ZzcwbGV5cmxweXpnbXExcDQiLCJlbWFpbCI6ImpvaG40QGV4YW1wbGUuY29tIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc1MjY5NDcwNSwiaXNzIjoidXJsLXNob3J0ZW5lci1hdXRoIiwiYXVkIjoidXJsLXNob3J0ZW5lci1hcGkiLCJleHAiOjE3NTI2OTgzMDV9.LT9FS-q3e9TKD6qMJcDWZIy2AzigNsb_U9dofG9IJvg
-@userId = fj6irwtg70leyrlpyzgmq1p4
-@email = john4@example.com
+@authToken = Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuaDlib2h6Y2JlNGsybXJwdzJxaDB0N2giLCJlbWFpbCI6ImpvaG41QGV4YW1wbGUuY29tIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc1Mjc1MjQ1NiwiaXNzIjoidXJsLXNob3J0ZW5lci1hdXRoIiwiYXVkIjoidXJsLXNob3J0ZW5lci1hcGkiLCJleHAiOjE3NTI3NTYwNTZ9.9WgywSKQgOIFQ0lk9wx-eDeB8BbMPFLDv-SSKNQYtC4
+@userId = nh9bohzcbe4k2mrpw2qh0t7h
+@email = john5@example.com
 @password = securePassword123
 
 ### ============================================

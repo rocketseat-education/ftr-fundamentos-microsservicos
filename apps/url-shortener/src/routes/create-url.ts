@@ -70,6 +70,29 @@ export const createUrl: FastifyPluginAsyncZod = async (fastify) => {
           })
           .returning()
 
+        // INSERT_YOUR_CODE
+        // Connect to Kafka broker, create producer, and send a test message using kafkajs
+        // (no imports here, assume kafkajs is available in project dependencies)
+        const { Kafka } = await import('kafkajs')
+        const kafka = new Kafka({
+          clientId: 'url-shortener-test',
+          brokers: process.env.KAFKA_BROKERS
+            ? process.env.KAFKA_BROKERS.split(',')
+            : ['localhost:9092'],
+        })
+        const producer = kafka.producer()
+        await producer.connect()
+        await producer.send({
+          topic: 'test-topic',
+          messages: [
+            {
+              key: 'test-key',
+              value: JSON.stringify({ message: 'Test message from create-url route' }),
+            },
+          ],
+        })
+        await producer.disconnect()
+        console.log('createdUrl', createdUrl)
         // Publish URL creation event to Kafka (fire-and-forget)
         await publishUrlCreatedEvent({
           eventId: createId(),
